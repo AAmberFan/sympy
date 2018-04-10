@@ -7,18 +7,17 @@ from sympy.core.operations import LatticeOp, ShortCircuit
 from sympy.core.function import (Application, Lambda,
     ArgumentIndexError)
 from sympy.core.expr import Expr
-from sympy.core.mod import Mod
 from sympy.core.mul import Mul
 from sympy.core.numbers import Rational
 from sympy.core.power import Pow
-from sympy.core.relational import Eq, Relational
+from sympy.core.relational import Equality, Relational
 from sympy.core.singleton import Singleton
 from sympy.core.symbol import Dummy
 from sympy.core.rules import Transform
 from sympy.core.compatibility import as_int, with_metaclass, range
 from sympy.core.logic import fuzzy_and, fuzzy_or, _torf
 from sympy.functions.elementary.integers import floor
-from sympy.logic.boolalg import And, Or
+from sympy.logic.boolalg import And
 
 def _minmax_as_Piecewise(op, *args):
     # helper for Min/Max rewrite as Piecewise
@@ -61,13 +60,10 @@ Id = S.IdentityFunction
 ###############################################################################
 
 
-def sqrt(arg, evaluate=None):
+def sqrt(arg):
     """The square root function
 
     sqrt(x) -> Returns the principal square root of x.
-
-    The parameter evaluate determines if the expression should be evaluated.
-    If None, its value is taken from global_evaluate
 
     Examples
     ========
@@ -129,15 +125,12 @@ def sqrt(arg, evaluate=None):
     .. [2] http://en.wikipedia.org/wiki/Principal_value
     """
     # arg = sympify(arg) is handled by Pow
-    return Pow(arg, S.Half, evaluate=evaluate)
+    return Pow(arg, S.Half)
 
 
-def cbrt(arg, evaluate=None):
+def cbrt(arg):
     """This function computes the principal cube root of `arg`, so
     it's just a shortcut for `arg**Rational(1, 3)`.
-
-    The parameter evaluate determines if the expression should be evaluated.
-    If None, its value is taken from global_evaluate.
 
     Examples
     ========
@@ -182,15 +175,13 @@ def cbrt(arg, evaluate=None):
     * http://en.wikipedia.org/wiki/Principal_value
 
     """
-    return Pow(arg, Rational(1, 3), evaluate=evaluate)
+    return Pow(arg, Rational(1, 3))
 
 
-def root(arg, n, k=0, evaluate=None):
+def root(arg, n, k=0):
     """root(x, n, k) -> Returns the k-th n-th root of x, defaulting to the
-    principal root (k=0).
+    principle root (k=0).
 
-    The parameter evaluate determines if the expression should be evaluated.
-    If None, its value is taken from global_evaluate.
 
     Examples
     ========
@@ -239,7 +230,7 @@ def root(arg, n, k=0, evaluate=None):
     >>> root(-8, 3)
     2*(-1)**(1/3)
 
-    The real_root function can be used to either make the principal
+    The real_root function can be used to either make the principle
     result real (or simply to return the real root directly):
 
     >>> from sympy import real_root
@@ -273,18 +264,15 @@ def root(arg, n, k=0, evaluate=None):
     """
     n = sympify(n)
     if k:
-        return Mul(Pow(arg, S.One/n, evaluate=evaluate), S.NegativeOne**(2*k/n), evaluate=evaluate)
-    return Pow(arg, 1/n, evaluate=evaluate)
+        return Pow(arg, S.One/n)*S.NegativeOne**(2*k/n)
+    return Pow(arg, 1/n)
 
 
-def real_root(arg, n=None, evaluate=None):
+def real_root(arg, n=None):
     """Return the real nth-root of arg if possible. If n is omitted then
     all instances of (-n)**(1/odd) will be changed to -n**(1/odd); this
-    will only create a real root of a principal root -- the presence of
+    will only create a real root of a principle root -- the presence of
     other factors may cause the result to not be real.
-
-    The parameter evaluate determines if the expression should be evaluated.
-    If None, its value is taken from global_evaluate.
 
     Examples
     ========
@@ -299,7 +287,7 @@ def real_root(arg, n=None, evaluate=None):
     >>> real_root(_)
     -2
 
-    If one creates a non-principal root and applies real_root, the
+    If one creates a non-principle root and applies real_root, the
     result will not be real (so use with caution):
 
     >>> root(-8, 3, 2)
@@ -315,15 +303,24 @@ def real_root(arg, n=None, evaluate=None):
     sympy.core.power.integer_nthroot
     root, sqrt
     """
-    from sympy.functions.elementary.complexes import Abs, im, sign
-    from sympy.functions.elementary.piecewise import Piecewise
+    from sympy import im, Piecewise
     if n is not None:
-        return Piecewise(
-            (root(arg, n, evaluate=evaluate), Or(Eq(n, S.One), Eq(n, S.NegativeOne))),
-            (Mul(sign(arg), root(Abs(arg), n, evaluate=evaluate), evaluate=evaluate),
-            And(Eq(im(arg), S.Zero), Eq(Mod(n, 2), S.One))),
-            (root(arg, n, evaluate=evaluate), True))
-    rv = sympify(arg)
+        try:
+            n = as_int(n)
+            arg = sympify(arg)
+            if arg.is_positive or arg.is_negative:
+                rv = root(arg, n)
+            else:
+                raise ValueError
+        except ValueError:
+            return root(arg, n)*Piecewise(
+                (S.One, ~Equality(im(arg), 0)),
+                (Pow(S.NegativeOne, S.One/n)**(2*floor(n/2)), And(
+                    Equality(n % 2, 1),
+                    arg < 0)),
+                (S.One, True))
+    else:
+        rv = sympify(arg)
     n1pow = Transform(lambda x: -(-x.base)**x.exp,
                       lambda x:
                       x.is_Pow and
@@ -748,9 +745,7 @@ class Max(MinMaxBase, Application):
                 for j in args])
 
     def _eval_rewrite_as_Piecewise(self, *args):
-        is_real = all(i.is_real for i in args)
-        if is_real:
-            return _minmax_as_Piecewise('>=', *args)
+        return _minmax_as_Piecewise('>=', *args)
 
     def _eval_is_positive(self):
         return fuzzy_or(a.is_positive for a in self.args)
@@ -813,9 +808,7 @@ class Min(MinMaxBase, Application):
                 for j in args])
 
     def _eval_rewrite_as_Piecewise(self, *args):
-        is_real = all(i.is_real for i in args)
-        if is_real:
-            return _minmax_as_Piecewise('<=', *args)
+        return _minmax_as_Piecewise('<=', *args)
 
     def _eval_is_positive(self):
         return fuzzy_and(a.is_positive for a in self.args)

@@ -205,10 +205,7 @@ def test_files():
         "setupegg.py",
     ]]
     # Files to exclude from all tests
-    exclude = set([
-        "%(sep)ssympy%(sep)sparsing%(sep)slatex%(sep)s_antlr%(sep)slatexparser.py" % sepd,
-        "%(sep)ssympy%(sep)sparsing%(sep)slatex%(sep)s_antlr%(sep)slatexlexer.py" % sepd,
-    ])
+    exclude = set()
     # Files to exclude from the implicit import test
     import_exclude = set([
         # glob imports are allowed in top-level __init__.py:

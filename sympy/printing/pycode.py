@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import wraps
 from itertools import chain
-from sympy.core import sympify, S
+from sympy.core import sympify
 from .precedence import precedence
 from .codeprinter import CodePrinter
 
@@ -16,7 +16,13 @@ _kw_only_py3 = {'False', 'nonlocal', 'True'}
 
 _known_functions = {
     'Abs': 'abs',
+    "Max": "max",
+    "Min": 'min',
 }
+#_known_functions_maxmin = {
+    # before the : is the Sympy expression and after that is the python expression
+    
+#}
 _known_functions_math = {
     'acos': 'acos',
     'acosh': 'acosh',
@@ -124,16 +130,6 @@ class PythonCodePrinter(CodePrinter):
     def _print_Infinity(self, expr):
         return "float('inf')"
 
-    def _print_sign(self, e):
-        return '(0.0 if {e} == 0 else {f}(1, {e}))'.format(
-            f=self._module_format('math.copysign'), e=self._print(e.args[0]))
-
-    def _print_NegativeInfinity(self, expr):
-        return "float('-inf')"
-
-    def _print_ComplexInfinity(self, expr):
-        return self._print_NaN(expr)
-
     def _print_Mod(self, expr):
         PREC = precedence(expr)
         return ('{0} % {1}'.format(*map(lambda x: self.parenthesize(x, PREC), expr.args)))
@@ -144,38 +140,16 @@ class PythonCodePrinter(CodePrinter):
         for arg in expr.args:
             e = arg.expr
             c = arg.cond
-            if i == 0:
-                result.append('(')
-            result.append('(')
+            result.append('((')
             result.append(self._print(e))
-            result.append(')')
-            result.append(' if ')
+            result.append(') if (')
             result.append(self._print(c))
-            result.append(' else ')
+            result.append(') else (')
             i += 1
         result = result[:-1]
-        if result[-1] == 'True':
-            result = result[:-2]
-            result.append(')')
-        else:
-            result.append(' else None)')
+        result.append(') else None)')
+        result.append(')'*(2*i - 2))
         return ''.join(result)
-
-    def _print_Relational(self, expr):
-        "Relational printer for Equality and Unequality"
-        op = {
-            '==' :'equal',
-            '!=' :'not_equal',
-            '<'  :'less',
-            '<=' :'less_equal',
-            '>'  :'greater',
-            '>=' :'greater_equal',
-        }
-        if expr.rel_op in op:
-            lhs = self._print(expr.lhs)
-            rhs = self._print(expr.rhs)
-            return '({lhs} {op} {rhs})'.format(op=expr.rel_op, lhs=lhs, rhs=rhs)
-        return super(PythonCodePrinter, self)._print_Relational(expr)
 
     def _print_ITE(self, expr):
         from sympy.functions.elementary.piecewise import Piecewise
@@ -224,9 +198,7 @@ def pycode(expr, **settings):
 
 _not_in_mpmath = 'log1p log2'.split()
 _in_mpmath = [(k, v) for k, v in _known_functions_math.items() if k not in _not_in_mpmath]
-_known_functions_mpmath = dict(_in_mpmath, **{
-    'sign': 'sign',
-})
+_known_functions_mpmath = dict(_in_mpmath)
 _known_constants_mpmath = {
     'Pi': 'pi'
 }
@@ -288,7 +260,6 @@ _known_functions_numpy = dict(_in_numpy, **{
     'atan2': 'arctan2',
     'atanh': 'arctanh',
     'exp2': 'exp2',
-    'sign': 'sign',
 })
 
 
@@ -398,9 +369,6 @@ class NumPyPrinter(PythonCodePrinter):
 
     def _print_re(self, expr):
         return "%s(%s)" % (self._module_format('numpy.real'), self._print(expr.args[0]))
-
-    def _print_sinc(self, expr):
-        return "%s(%s)" % (self._module_format('numpy.sinc'), self._print(expr.args[0]/S.Pi))
 
     def _print_MatrixBase(self, expr):
         func = self.known_functions.get(expr.__class__.__name__, None)

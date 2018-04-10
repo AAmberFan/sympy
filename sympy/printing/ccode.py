@@ -159,7 +159,9 @@ class C89CodePrinter(CodePrinter):
     language = "C"
     standard = "C89"
     reserved_words = set(reserved_words)
-
+    
+    # variable_type = 'double'
+    
     _default_settings = {
         'order': None,
         'full_prec': 'auto',

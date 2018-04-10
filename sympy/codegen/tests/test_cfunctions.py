@@ -2,7 +2,6 @@ from sympy import symbols, Symbol, exp, log, pi, Rational, S
 from sympy.codegen.cfunctions import (
     expm1, log1p, exp2, log2, fma, log10, Sqrt, Cbrt, hypot
 )
-from sympy.core.function import expand_log
 
 
 def test_expm1():
@@ -33,7 +32,7 @@ def test_log1p():
     # Eval
     assert log1p(0) == 0
     d = S(10)
-    assert expand_log(log1p(d**-1000) - log(d**1000 + 1) + log(d**1000)) == 0
+    assert log1p(d**-1000) - log(d**1000 + 1) + log(d**1000) == 0
 
     x = Symbol('x', real=True, finite=True)
 
@@ -44,7 +43,7 @@ def test_log1p():
 
     # Precision
     assert not abs(log(1e-99 + 1).evalf() - 1e-99) < 1e-100  # for comparison
-    assert abs(expand_log(log1p(1e-99)).evalf() - 1e-99) < 1e-100
+    assert abs(log1p(1e-99).evalf() - 1e-99) < 1e-100
 
     # Properties
     assert log1p(-2**(-S(1)/2)).is_real

@@ -211,8 +211,7 @@ def _parallel_dict_from_expr_if_gens(exprs, opt):
                         if not factor.free_symbols.intersection(opt.gens):
                             coeff.append(factor)
                         else:
-                            raise PolynomialError("%s contains an element of "
-                                                  "the set of generators." % factor)
+                            raise PolynomialError("%s contains an element of the generators set" % factor)
 
             monom = tuple(monom)
 

@@ -1,7 +1,6 @@
-from sympy import (symbols, Symbol, sinh, nan, oo, zoo, pi, asinh, acosh, log,
-    sqrt, coth, I, cot, E, tanh, tan, cosh, cos, S, sin, Rational, atanh, acoth,
-    Integer, O, exp, sech, sec, csch, asech, acsch, acos, asin, expand_mul,
-    AccumBounds)
+from sympy import symbols, Symbol, sinh, nan, oo, zoo, pi, asinh, acosh, log, sqrt, \
+    coth, I, cot, E, tanh, tan, cosh, cos, S, sin, Rational, atanh, acoth, \
+    Integer, O, exp, sech, sec, csch, asech, acsch, acos, asin, expand_mul
 
 from sympy.utilities.pytest import raises
 
@@ -476,10 +475,10 @@ def test_acosh():
     assert acosh(oo) == oo
     assert acosh(-oo) == oo
 
-    assert acosh(I*oo) == oo + I*pi/2
-    assert acosh(-I*oo) == oo - I*pi/2
+    assert acosh(I*oo) == oo
+    assert acosh(-I*oo) == oo
 
-    assert acosh(zoo) == zoo
+    assert acosh(zoo) == oo
 
     assert acosh(I) == log(I*(1 + sqrt(2)))
     assert acosh(-I) == log(-I*(1 + sqrt(2)))
@@ -531,7 +530,7 @@ def test_asech():
     # at infinites
     assert asech(oo) == I*pi/2
     assert asech(-oo) == I*pi/2
-    assert asech(zoo) == I*AccumBounds(-pi/2, pi/2)
+    assert asech(zoo) == nan
 
     assert asech(I) == log(1 + sqrt(2)) - I*pi/2
     assert asech(-I) == log(1 + sqrt(2)) + I*pi/2
@@ -671,7 +670,7 @@ def test_atanh():
     assert atanh(I*oo) == I*pi/2
     assert atanh(-I*oo) == -I*pi/2
 
-    assert atanh(zoo) == I*AccumBounds(-pi/2, pi/2)
+    assert atanh(zoo) == nan
 
     #properties
     assert atanh(-x) == -atanh(x)

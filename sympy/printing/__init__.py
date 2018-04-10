@@ -12,6 +12,7 @@ from .cxxcode import cxxcode
 from .fcode import fcode, print_fcode
 from .rcode import rcode, print_rcode
 from .jscode import jscode, print_jscode
+from .jcode import jcode, print_jcode
 from .julia import julia_code
 from .mathematica import mathematica_code
 from .octave import octave_code

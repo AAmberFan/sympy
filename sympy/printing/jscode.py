@@ -48,7 +48,9 @@ class JavascriptCodePrinter(CodePrinter):
     """
     printmethod = '_javascript'
     language = 'Javascript'
-
+    
+    variable_type = 'var'
+    
     _default_settings = {
         'order': None,
         'full_prec': 'auto',

@@ -1,11 +1,11 @@
 from __future__ import print_function, division
 
 from .rv import (probability, expectation, density, where, given, pspace, cdf,
-        characteristic_function, sample, sample_iter, random_symbols, independent, dependent,
+        sample, sample_iter, random_symbols, independent, dependent,
         sampling_density)
 from sympy import sqrt
 
-__all__ = ['P', 'E', 'density', 'where', 'given', 'sample', 'cdf', 'characteristic_function', 'pspace',
+__all__ = ['P', 'E', 'density', 'where', 'given', 'sample', 'cdf', 'pspace',
         'sample_iter', 'variance', 'std', 'skewness', 'covariance',
         'dependent', 'independent', 'random_symbols', 'correlation',
         'moment', 'cmoment', 'sampling_density']

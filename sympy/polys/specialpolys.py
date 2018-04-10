@@ -34,18 +34,8 @@ from sympy.core.compatibility import range
 
 
 @public
-def swinnerton_dyer_poly(n, x=None, polys=False):
-    """Generates n-th Swinnerton-Dyer polynomial in `x`.
-
-    Parameters
-    ----------
-    n : int
-        `n` decides the order of polynomial
-    x : optional
-    polys : bool, optional
-        ``polys=True`` returns an expression, otherwise
-        (default) returns an expression.
-    """
+def swinnerton_dyer_poly(n, x=None, **args):
+    """Generates n-th Swinnerton-Dyer polynomial in `x`.  """
     from .numberfields import minimal_polynomial
     if n <= 0:
         raise ValueError(
@@ -70,23 +60,14 @@ def swinnerton_dyer_poly(n, x=None, polys=False):
         ex = x**4 - 10*x**2 + 1
     elif n == 3:
         ex = x**8 - 40*x**6 + 352*x**4 - 960*x**2 + 576
-
-    return PurePoly(ex, x) if polys else ex
-
+    if not args.get('polys', False):
+        return ex
+    else:
+        return PurePoly(ex, x)
 
 @public
-def cyclotomic_poly(n, x=None, polys=False):
-    """Generates cyclotomic polynomial of order `n` in `x`.
-
-    Parameters
-    ----------
-    n : int
-        `n` decides the order of polynomial
-    x : optional
-    polys : bool, optional
-        ``polys=True`` returns an expression, otherwise
-        (default) returns an expression.
-    """
+def cyclotomic_poly(n, x=None, **args):
+    """Generates cyclotomic polynomial of order `n` in `x`. """
     if n <= 0:
         raise ValueError(
             "can't generate cyclotomic polynomial of order %s" % n)
@@ -98,17 +79,15 @@ def cyclotomic_poly(n, x=None, polys=False):
     else:
         poly = PurePoly.new(poly, Dummy('x'))
 
-    return poly if polys else poly.as_expr()
+    if not args.get('polys', False):
+        return poly.as_expr()
+    else:
+        return poly
 
 
 @public
 def symmetric_poly(n, *gens, **args):
-    """Generates symmetric polynomial of order `n`.
-
-    Returns a Poly object when ``polys=True``, otherwise
-    (default) returns an expression.
-    """
-    # TODO: use an explicit keyword argument when Python 2 support is dropped
+    """Generates symmetric polynomial of order `n`. """
     gens = _analyze_gens(gens)
 
     if n < 0 or n > len(gens) or not gens:
@@ -116,7 +95,7 @@ def symmetric_poly(n, *gens, **args):
     elif not n:
         poly = S.One
     else:
-        poly = Add(*[Mul(*s) for s in subsets(gens, int(n))])
+        poly = Add(*[ Mul(*s) for s in subsets(gens, int(n)) ])
 
     if not args.get('polys', False):
         return poly
@@ -126,29 +105,13 @@ def symmetric_poly(n, *gens, **args):
 
 @public
 def random_poly(x, n, inf, sup, domain=ZZ, polys=False):
-    """Generates a polynomial of degree ``n`` with coefficients in
-    ``[inf, sup]``.
-
-    Parameters
-    ----------
-    x
-        `x` is the independent term of polynomial
-    n : int
-        `n` decides the order of polynomial
-    inf
-        Lower limit of range in which coefficients lie
-    sup
-        Upper limit of range in which coefficients lie
-    domain : optional
-         Decides what ring the coefficients are supposed
-         to belong. Default is set to Integers.
-    polys : bool, optional
-        ``polys=True`` returns an expression, otherwise
-        (default) returns an expression.
-    """
+    """Return a polynomial of degree ``n`` with coefficients in ``[inf, sup]``. """
     poly = Poly(dup_random(n, inf, sup, domain), x, domain=domain)
 
-    return poly if polys else poly.as_expr()
+    if not polys:
+        return poly.as_expr()
+    else:
+        return poly
 
 
 @public
@@ -161,24 +124,34 @@ def interpolating_poly(n, x, X='x', Y='y'):
         Y = symbols("%s:%s" % (Y, n))
 
     coeffs = []
-    numert = Mul(*[(x - u) for u in X])
 
-    for i in range(n):
-        numer = numert/(x - X[i])
-        denom = Mul(*[(X[i] - X[j]) for j in range(n) if i != j])
+    for i in range(0, n):
+        numer = []
+        denom = []
+
+        for j in range(0, n):
+            if i == j:
+                continue
+
+            numer.append(x - X[j])
+            denom.append(X[i] - X[j])
+
+        numer = Mul(*numer)
+        denom = Mul(*denom)
+
         coeffs.append(numer/denom)
 
-    return Add(*[coeff*y for coeff, y in zip(coeffs, Y)])
+    return Add(*[ coeff*y for coeff, y in zip(coeffs, Y) ])
 
 
 def fateman_poly_F_1(n):
     """Fateman's GCD benchmark: trivial GCD """
-    Y = [Symbol('y_' + str(i)) for i in range(n + 1)]
+    Y = [ Symbol('y_' + str(i)) for i in range(0, n + 1) ]
 
     y_0, y_1 = Y[0], Y[1]
 
-    u = y_0 + Add(*[y for y in Y[1:]])
-    v = y_0**2 + Add(*[y**2 for y in Y[1:]])
+    u = y_0 + Add(*[ y for y in Y[1:] ])
+    v = y_0**2 + Add(*[ y**2 for y in Y[1:] ])
 
     F = ((u + 1)*(u + 2)).as_poly(*Y)
     G = ((v + 1)*(-3*y_1*y_0**2 + y_1**2 - 1)).as_poly(*Y)
@@ -192,7 +165,7 @@ def dmp_fateman_poly_F_1(n, K):
     """Fateman's GCD benchmark: trivial GCD """
     u = [K(1), K(0)]
 
-    for i in range(n):
+    for i in range(0, n):
         u = [dmp_one(i, K), u]
 
     v = [K(1), K(0), K(0)]
@@ -220,11 +193,11 @@ def dmp_fateman_poly_F_1(n, K):
 
 def fateman_poly_F_2(n):
     """Fateman's GCD benchmark: linearly dense quartic inputs """
-    Y = [Symbol('y_' + str(i)) for i in range(n + 1)]
+    Y = [ Symbol('y_' + str(i)) for i in range(0, n + 1) ]
 
     y_0 = Y[0]
 
-    u = Add(*[y for y in Y[1:]])
+    u = Add(*[ y for y in Y[1:] ])
 
     H = Poly((y_0 + u + 1)**2, *Y)
 
@@ -238,7 +211,7 @@ def dmp_fateman_poly_F_2(n, K):
     """Fateman's GCD benchmark: linearly dense quartic inputs """
     u = [K(1), K(0)]
 
-    for i in range(n - 1):
+    for i in range(0, n - 1):
         u = [dmp_one(i, K), u]
 
     m = n - 1
@@ -257,11 +230,11 @@ def dmp_fateman_poly_F_2(n, K):
 
 def fateman_poly_F_3(n):
     """Fateman's GCD benchmark: sparse inputs (deg f ~ vars f) """
-    Y = [Symbol('y_' + str(i)) for i in range(n + 1)]
+    Y = [ Symbol('y_' + str(i)) for i in range(0, n + 1) ]
 
     y_0 = Y[0]
 
-    u = Add(*[y**(n + 1) for y in Y[1:]])
+    u = Add(*[ y**(n + 1) for y in Y[1:] ])
 
     H = Poly((y_0**(n + 1) + u + 1)**2, *Y)
 

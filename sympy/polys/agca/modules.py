@@ -1103,7 +1103,7 @@ class SubModulePolyRing(SubModule):
                 m[r + i] = im[j, i]
             newgens.append(Rkr.convert(m))
         # Note: we need *descending* order on module index, and TOP=False to
-        #       get an elimination order
+        #       get an eliminetaion order
         F = Rkr.submodule(*newgens, order='ilex', TOP=False)
 
         # Second bullet point: standard basis of F

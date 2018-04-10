@@ -80,7 +80,9 @@ class _CXXCodePrinterBase(object):
     printmethod = "_cxxcode"
     language = 'C++'
     _ns = 'std::'  # namespace
-
+    
+    #variable_type = 'double'
+    
     def __init__(self, settings=None):
         super(_CXXCodePrinterBase, self).__init__(settings or {})
 

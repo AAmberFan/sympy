@@ -1,5 +1,5 @@
 from sympy import (symbols, Symbol, product, factorial, rf, sqrt, cos,
-                   Function, Product, Rational, Sum, oo, exp, log, S, pi)
+                   Function, Product, Rational, Sum, oo, exp, log, S)
 from sympy.utilities.pytest import raises
 from sympy import simplify
 
@@ -360,11 +360,6 @@ def test_issue_13546():
     k = Symbol('k')
     p = Product(n + 1 / 2**k, (k, 0, n-1)).doit()
     assert p.subs(n, 2).doit() == S(15)/2
-
-
-def test_issue_14036():
-    a, n = symbols('a n')
-    assert product(1 - a**2 / (n*pi)**2, [n, 1, oo]) != 0
 
 
 def test_rewrite_Sum():

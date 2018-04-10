@@ -166,10 +166,6 @@ class Curve(GeometrySet):
         return free
 
     @property
-    def ambient_dimension(self):
-        return len(self.args[0])
-
-    @property
     def functions(self):
         """The functions specifying the curve.
 

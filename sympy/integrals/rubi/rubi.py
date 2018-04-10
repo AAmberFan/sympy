@@ -1,7 +1,6 @@
 from sympy.external import import_module
 matchpy = import_module("matchpy")
 from sympy.utilities.decorator import doctest_depends_on
-from sympy.core import Integer, Float
 import inspect, re
 
 if matchpy:
@@ -134,12 +133,12 @@ if matchpy:
     @doctest_depends_on(modules=('matchpy',))
     def rubi_object():
         '''
-        Returns rubi ManyToOneReplacer by adding all rules from different modules.
+        Returns rubi ManyToOneReplacer by adding all rules form different modules.
 
         Uncomment the lines to add integration capabilities of that module.
 
         Currently, there are parsing issues with special_function,
-        derivative and miscellaneous_integration. Hence they are commented.
+        derivative nad miscellaneous_integration. Hence they are commented.
         '''
         from sympy.integrals.rubi.rules.integrand_simplification import integrand_simplification
         from sympy.integrals.rubi.rules.linear_products import linear_products
@@ -187,19 +186,19 @@ if matchpy:
 @doctest_depends_on(modules=('matchpy',))
 def rubi_integrate(expr, var, showsteps=False):
     '''
-    Rule based algorithm for integration. Integrates the expression by applying
+    Rule based algorithm for integration. Integrates the expression by appling
     transformation rules to the expression.
 
     Returns `Integrate` if an expression cannot be integrated.
 
     Parameters
     ==========
-    expr : integrand expression
+    expr : intergand expression
     var : variable of integration
 
     Returns Integral object if unable to integrate.
     '''
-    if isinstance(expr, (int, Integer)) or isinstance(expr, (float, Float)):
+    if isinstance(expr, int) or isinstance(expr, float):
         return S(expr)*var
 
     result = rubi.replace(Integral(expr, var))
@@ -214,7 +213,7 @@ def get_matching_rule_definition(expr, var):
 
     Parameters
     ==========
-    expr : integrand expression
+    expr : intergand expression
     var : variable of integration
     '''
     matcher = rubi.matcher

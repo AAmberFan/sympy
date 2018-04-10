@@ -199,7 +199,3 @@ class MutableDenseNDimArray(DenseNDimArray, MutableNDimArray):
 
     def as_immutable(self):
         return ImmutableDenseNDimArray(self)
-
-    @property
-    def free_symbols(self):
-        return {i for j in self._array for i in j.free_symbols}

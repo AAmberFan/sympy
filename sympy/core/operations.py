@@ -31,10 +31,7 @@ class AssocOp(Basic):
         args = list(map(_sympify, args))
         args = [a for a in args if a is not cls.identity]
 
-        evaluate = options.get('evaluate')
-        if evaluate is None:
-            evaluate = global_evaluate[0]
-        if not evaluate:
+        if not options.pop('evaluate', global_evaluate[0]):
             return cls._from_args(args)
 
         if len(args) == 0:
@@ -282,7 +279,7 @@ class AssocOp(Basic):
                     if not nc:
                         return True
                     elif len(nc) <= len(_nc):
-                        for i in range(len(_nc) - len(nc) + 1):
+                        for i in range(len(_nc) - len(nc)):
                             if _nc[i:i + len(nc)] == nc:
                                 return True
             return False

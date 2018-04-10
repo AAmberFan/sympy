@@ -716,7 +716,7 @@ class binomial(CombinatorialFunction):
     however 'k' must also be nonnegative. This case is very
     useful when evaluating summations.
 
-    For the sake of convenience for negative integer 'k' this function
+    For the sake of convenience for negative 'k' this function
     will return zero no matter what valued is the other argument.
 
     To expand the binomial when n is a symbol, use either
@@ -770,12 +770,6 @@ class binomial(CombinatorialFunction):
     >>> expand_func(binomial(n, 3))
     n*(n - 2)*(n - 1)/6
 
-    References
-    ==========
-
-    .. [1] https://www.johndcook.com/blog/binomial_coefficients/
-
-
     """
 
     def fdiff(self, argindex=1):
@@ -812,14 +806,37 @@ class binomial(CombinatorialFunction):
                     from sympy.core.compatibility import gmpy
                     return Integer(gmpy.bincoef(n, k))
 
-                d, result = n - k, 1
-                for i in range(1, k + 1):
-                    d += 1
-                    result = result * d // i
+                prime_count_estimate = N(n / log(n))
+
+                # if the number of primes less than n is less than k, use prime sieve method
+                # otherwise it is more memory efficient to compute factorials explicitly
+                if prime_count_estimate < k:
+                    M, result = int(_sqrt(n)), 1
+                    for prime in sieve.primerange(2, n + 1):
+                        if prime > n - k:
+                            result *= prime
+                        elif prime > n // 2:
+                            continue
+                        elif prime > M:
+                            if n % prime < k % prime:
+                                result *= prime
+                        else:
+                            N, K = n, k
+                            exp = a = 0
+
+                            while N > 0:
+                                a = int((N % prime) < (K % prime + a))
+                                N, K = N // prime, K // prime
+                                exp = a + exp
+
+                            if exp > 0:
+                                result *= prime**exp
+                else:
+                    result = ff(n, k) / factorial(k)
                 return Integer(result)
             else:
-                d, result = n - k, 1
-                for i in range(1, k + 1):
+                d = result = n - k + 1
+                for i in range(2, k + 1):
                     d += 1
                     result *= d
                     result /= i
@@ -828,24 +845,18 @@ class binomial(CombinatorialFunction):
     @classmethod
     def eval(cls, n, k):
         n, k = map(sympify, (n, k))
-        if k.is_zero:
+        d = n - k
+        if d.is_zero or k.is_zero:
             return S.One
-        if (k - 1).is_zero:
-            return n
-        if k.is_integer:
-            if k.is_negative or (n.is_integer and n.is_nonnegative
-                    and (n - k).is_negative):
+        elif d.is_zero is False:
+            if (k - 1).is_zero:
+                return n
+            elif k.is_negative:
                 return S.Zero
-            elif n.is_number:
-                res = cls._eval(n, k)
-                return res.expand(basic=True) if res else res
-        elif n.is_negative and n.is_integer:
-            # a special case when binomial evaluates to complex infinity
-            return S.ComplexInfinity
-        elif k.is_number:
-            from sympy import gamma
-            return gamma(n + 1)/(gamma(k + 1)*gamma(n - k + 1))
-
+            elif n.is_integer and n.is_nonnegative and d.is_negative:
+                return S.Zero
+        if k.is_Integer and k > 0 and n.is_Number:
+            return cls._eval(n, k)
 
     def _eval_expand_func(self, **hints):
         """

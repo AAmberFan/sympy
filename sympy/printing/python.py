@@ -14,7 +14,7 @@ STRPRINT = ("Add", "Infinity", "Integer", "Mul", "NegativeInfinity",
 
 class PythonPrinter(ReprPrinter, StrPrinter):
     """A printer which converts an expression into its Python interpretation."""
-
+    variable_type = ' '
     def __init__(self, settings=None):
         ReprPrinter.__init__(self)
         StrPrinter.__init__(self, settings)

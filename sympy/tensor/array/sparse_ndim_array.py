@@ -211,7 +211,3 @@ class MutableSparseNDimArray(MutableNDimArray, SparseNDimArray):
 
     def as_immutable(self):
         return ImmutableSparseNDimArray(self)
-
-    @property
-    def free_symbols(self):
-        return {i for j in self._sparse_array.values() for i in j.free_symbols}

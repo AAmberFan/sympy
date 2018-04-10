@@ -746,7 +746,7 @@ class CosetTable(DefaultPrinting):
                     table[beta][A_dict_inv[x]] == gamma
         # all the cosets in the table are live cosets
         self.p = list(range(gamma + 1))
-        # delete the useless columns
+        # delete the useless coloumns
         del table[len(self.p):]
         # re-define values
         for row in table:

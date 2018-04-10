@@ -16,7 +16,7 @@ from sympy.stats.rv import (RandomDomain, SingleDomain, ConditionalDomain,
 from sympy.functions.special.delta_functions import DiracDelta
 from sympy import (Interval, Intersection, symbols, sympify, Dummy, Mul,
         Integral, And, Or, Piecewise, cacheit, integrate, oo, Lambda,
-        Basic, S, exp, I, FiniteSet, Ne, Eq, Union)
+        Basic, S)
 from sympy.solvers.solveset import solveset
 from sympy.solvers.inequalities import reduce_rational_inequalities
 from sympy.polys.polyerrors import PolynomialError
@@ -219,28 +219,6 @@ class SingleContinuousDistribution(ContinuousDistribution, NamedArgsMixin):
                 return cdf
         return self.compute_cdf(**kwargs)(x)
 
-    @cacheit
-    def compute_characteristic_function(self, **kwargs):
-        """ Compute the characteristic function from the PDF
-
-        Returns a Lambda
-        """
-        x, t = symbols('x, t', real=True, finite=True, cls=Dummy)
-        pdf = self.pdf(x)
-        cf = integrate(exp(I*t*x)*pdf, (x, -oo, oo))
-        return Lambda(t, cf)
-
-    def _characteristic_function(self, t):
-        return None
-
-    def characteristic_function(self, t, **kwargs):
-        """ Characteristic function """
-        if len(kwargs) == 0:
-            cf = self._characteristic_function(t)
-            if cf is not None:
-                return cf
-        return self.compute_characteristic_function(**kwargs)(t)
-
     def expectation(self, expr, var, evaluate=True, **kwargs):
         """ Expectation of expression over distribution """
         integral = Integral(expr * self.pdf(var), (var, self.set), **kwargs)
@@ -321,22 +299,8 @@ class ContinuousPSpace(PSpace):
         cdf = Piecewise((cdf, z >= left_bound), (0, True))
         return Lambda(z, cdf)
 
-    @cacheit
-    def compute_characteristic_function(self, expr, **kwargs):
-        if not self.domain.set.is_Interval:
-            raise NotImplementedError("Characteristic function of multivariate expressions not implemented")
-
-        d = self.compute_density(expr, **kwargs)
-        x, t = symbols('x, t', real=True, cls=Dummy)
-        cf = integrate(exp(I*t*x)*d(x), (x, -oo, oo), **kwargs)
-        return Lambda(t, cf)
-
     def probability(self, condition, **kwargs):
         z = Dummy('z', real=True, finite=True)
-        cond_inv = False
-        if isinstance(condition, Ne):
-            condition = Eq(condition.args[0], condition.args[1])
-            cond_inv = True
         # Univariate case can be handled by where
         try:
             domain = self.where(condition)
@@ -344,12 +308,8 @@ class ContinuousPSpace(PSpace):
             # Integrate out all other random variables
             pdf = self.compute_density(rv, **kwargs)
             # return S.Zero if `domain` is empty set
-            if domain.set is S.EmptySet or isinstance(domain.set, FiniteSet):
-                return S.Zero if not cond_inv else S.One
-            if isinstance(domain.set, Union):
-                return sum(
-                     Integral(pdf(z), (z, subset), **kwargs) for subset in
-                     domain.set.args if isinstance(subset, Interval))
+            if domain.set is S.EmptySet:
+                return S.Zero
             # Integrate out the last variable over the special domain
             return Integral(pdf(z), (z, domain.set), **kwargs)
 
@@ -363,8 +323,7 @@ class ContinuousPSpace(PSpace):
                 dens = ContinuousDistributionHandmade(dens)
             # Turn problem into univariate case
             space = SingleContinuousPSpace(z, dens)
-            result = space.probability(condition.__class__(space.value, 0))
-            return result if not cond_inv else S.One - result
+            return space.probability(condition.__class__(space.value, 0))
 
     def where(self, condition):
         rvs = frozenset(random_symbols(condition))
@@ -439,13 +398,6 @@ class SingleContinuousPSpace(ContinuousPSpace, SinglePSpace):
         else:
             return ContinuousPSpace.compute_cdf(self, expr, **kwargs)
 
-    def compute_characteristic_function(self, expr, **kwargs):
-        if expr == self.value:
-            t = symbols("t", real=True, cls=Dummy)
-            return Lambda(t, self.distribution.characteristic_function(t, **kwargs))
-        else:
-            return ContinuousPSpace.compute_characteristic_function(self, expr, **kwargs)
-
     def compute_density(self, expr, **kwargs):
         # http://en.wikipedia.org/wiki/Random_variable#Functions_of_random_variables
         if expr == self.value:
@@ -483,10 +435,10 @@ def _reduce_inequalities(conditions, var, **kwargs):
 def reduce_rational_inequalities_wrap(condition, var):
     if condition.is_Relational:
         return _reduce_inequalities([[condition]], var, relational=False)
-    if isinstance(condition, Or):
-        return Union(*[_reduce_inequalities([[arg]], var, relational=False)
-            for arg in condition.args])
-    if isinstance(condition, And):
+    if condition.__class__ is Or:
+        return _reduce_inequalities([list(condition.args)],
+                var, relational=False)
+    if condition.__class__ is And:
         intervals = [_reduce_inequalities([[arg]], var, relational=False)
             for arg in condition.args]
         I = intervals[0]

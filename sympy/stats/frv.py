@@ -12,7 +12,7 @@ from __future__ import print_function, division
 from itertools import product
 
 from sympy import (Basic, Symbol, cacheit, sympify, Mul,
-        And, Or, Tuple, Piecewise, Eq, Lambda, exp, I, Dummy)
+        And, Or, Tuple, Piecewise, Eq, Lambda)
 from sympy.sets.sets import FiniteSet
 from sympy.stats.rv import (RandomDomain, ProductDomain, ConditionalDomain,
         PSpace, ProductPSpace, SinglePSpace, random_symbols, sumsets, rv_subs,
@@ -176,7 +176,7 @@ class ConditionalFiniteDomain(ConditionalDomain, ProductFiniteDomain):
 
     @property
     def set(self):
-        if isinstance(self.fulldomain, SingleFiniteDomain):
+        if self.fulldomain.__class__ is SingleFiniteDomain:
             return FiniteSet(*[elem for elem in self.fulldomain.set
                                if frozenset(((self.fulldomain.symbol, elem),)) in self])
         else:
@@ -201,11 +201,6 @@ class SingleFiniteDistribution(Basic, NamedArgsMixin):
         x = Symbol('x')
         return Lambda(x, Piecewise(*(
             [(v, Eq(k, x)) for k, v in self.dict.items()] + [(0, True)])))
-
-    @property
-    def characteristic_function(self):
-        t = Dummy('t', real=True)
-        return Lambda(t, sum(exp(I*k*t)*v for k, v in self.dict.items()))
 
     @property
     def set(self):
@@ -290,13 +285,6 @@ class FinitePSpace(PSpace):
             sorted_items = [(v, float(cum_prob))
                     for v, cum_prob in sorted_items]
         return sorted_items
-
-    @cacheit
-    def compute_characteristic_function(self, expr):
-        d = self.compute_density(expr)
-        t = Dummy('t', real=True)
-
-        return Lambda(t, sum(exp(I*k*t)*v for k,v in d.items()))
 
     def integrate(self, expr, rvs=None):
         rvs = rvs or self.values
