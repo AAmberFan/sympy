@@ -187,7 +187,17 @@ class OctaveCodePrinter(CodePrinter):
             divsym = '/' if all([bi.is_number for bi in b]) else './'
             return (sign + multjoin(a, a_str) +
                     divsym + "(%s)" % multjoin(b, b_str))
+    def _print_Max(self, expr):
+        from sympy import Max
+        if len(expr.args) == 1:
+            return self._print(expr.args[0])
+        return "max(%s, %s)" % (expr.args[0], self._print(Max(*expr.args[1:])))
 
+    def _print_Min(self, expr):
+        from sympy import Min
+        if len(expr.args) == 1:
+            return self._print(expr.args[0])
+        return "min(%s, %s)" % (expr.args[0], self._print(Min(*expr.args[1:])))
 
     def _print_Pow(self, expr):
         powsymbol = '^' if all([x.is_number for x in expr.args]) else '.^'
